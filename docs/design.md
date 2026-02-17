@@ -795,13 +795,13 @@ pytest-asyncio >= 0.24
 
 ## 11. Build Timeline
 
-| Day | Deliverable |
-|-----|------------|
-| 1 | `models.py` (Pydantic models + validators), `trust.py` (time-based decay), `assignment.py`, `audit.py`, `events.py` |
-| 2 | `llm.py` (LiteLLM wrapper), `decomposition.py` (LLM-powered task decomposition) |
-| 3 | `verification.py` (multi-judge consensus), `permissions.py` (privilege attenuation + circuit breakers) |
-| 4 | `coordination.py` (parallel DAG execution), `delegator.py` (main orchestrator) |
-| 5 | `examples/research_pipeline.py`, integration tests, README with architecture diagram |
+| Day | Deliverable | Status |
+|-----|------------|--------|
+| 1 | `models.py` (Pydantic models + validators), `trust.py` (time-based decay), `assignment.py`, `audit.py`, `events.py` | Done |
+| 2 | `llm.py` (LiteLLM wrapper), `decomposition.py` (LLM-powered task decomposition) | |
+| 3 | `verification.py` (multi-judge consensus), `permissions.py` (privilege attenuation + circuit breakers) | |
+| 4 | `coordination.py` (parallel DAG execution), `delegator.py` (main orchestrator) | |
+| 5 | `examples/research_pipeline.py`, integration tests, README with architecture diagram | |
 
 ---
 
