@@ -1,0 +1,7 @@
+Requirement already satisfied: pytest-cov in /Users/nourdesouki/miniconda3/lib/python3.13/site-packages (4.1.0)
+Requirement already satisfied: pytest>=4.6 in /Users/nourdesouki/miniconda3/lib/python3.13/site-packages (from pytest-cov) (9.0.2)
+Requirement already satisfied: coverage>=5.2.1 in /Users/nourdesouki/miniconda3/lib/python3.13/site-packages (from coverage[toml]>=5.2.1->pytest-cov) (7.10.6)
+Requirement already satisfied: iniconfig>=1.0.1 in /Users/nourdesouki/miniconda3/lib/python3.13/site-packages (from pytest>=4.6->pytest-cov) (2.1.0)
+Requirement already satisfied: packaging>=22 in /Users/nourdesouki/miniconda3/lib/python3.13/site-packages (from pytest>=4.6->pytest-cov) (24.2)
+Requirement already satisfied: pluggy<2,>=1.5 in /Users/nourdesouki/miniconda3/lib/python3.13/site-packages (from pytest>=4.6->pytest-cov) (1.5.0)
+Requirement already satisfied: pygments>=2.7.2 in /Users/nourdesouki/miniconda3/lib/python3.13/site-packages (from pytest>=4.6->pytest-cov) (2.19.1)
