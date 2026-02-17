@@ -182,3 +182,101 @@ class DelegationResult(BaseModel):
     total_delegation_overhead: float = 0.0
     total_duration: float = 0.0
     reassignments: int = 0
+
+
+class TaskDAG(BaseModel):
+    """Directed acyclic graph of tasks with dependency edges."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tasks: dict[str, Task] = Field(default_factory=dict)
+    dependencies: dict[str, list[str]] = Field(default_factory=dict)
+    dependents: dict[str, list[str]] = Field(default_factory=dict)
+    root_task_id: str | None = None
+
+    def add_task(self, task: Task, depends_on: list[str] | None = None) -> None:
+        """Add a task to the DAG with optional dependency edges."""
+        self.tasks[task.id] = task
+        self.dependencies[task.id] = depends_on or []
+        if task.id not in self.dependents:
+            self.dependents[task.id] = []
+
+        for dep_id in self.dependencies[task.id]:
+            if dep_id not in self.tasks:
+                raise KeyError(f"Dependency task '{dep_id}' not found in DAG")
+            if dep_id not in self.dependents:
+                self.dependents[dep_id] = []
+            self.dependents[dep_id].append(task.id)
+
+        self._check_cycle(task.id)
+
+    def _check_cycle(self, start_id: str) -> None:
+        """Detect cycles using DFS from the newly added node."""
+        visited: set[str] = set()
+        stack: set[str] = set()
+
+        def dfs(node_id: str) -> bool:
+            visited.add(node_id)
+            stack.add(node_id)
+            for dep_id in self.dependents.get(node_id, []):
+                if dep_id not in visited:
+                    if dfs(dep_id):
+                        return True
+                elif dep_id in stack:
+                    return True
+            stack.discard(node_id)
+            return False
+
+        if dfs(start_id):
+            # Roll back: remove the task that caused the cycle
+            for dep_id in self.dependencies.get(start_id, []):
+                if start_id in self.dependents.get(dep_id, []):
+                    self.dependents[dep_id].remove(start_id)
+            del self.tasks[start_id]
+            del self.dependencies[start_id]
+            if start_id in self.dependents:
+                del self.dependents[start_id]
+            raise ValueError(f"Adding task '{start_id}' would create a cycle")
+
+    def get_task(self, task_id: str) -> Task:
+        """Retrieve a task by ID."""
+        if task_id not in self.tasks:
+            raise KeyError(f"Task '{task_id}' not found in DAG")
+        return self.tasks[task_id]
+
+    def get_ready_tasks(self, completed: set[str] | None = None) -> list[Task]:
+        """Return tasks whose dependencies are all satisfied."""
+        completed = completed or set()
+        ready = []
+        for task_id, task in self.tasks.items():
+            if task_id in completed:
+                continue
+            deps = self.dependencies.get(task_id, [])
+            if all(dep_id in completed for dep_id in deps):
+                ready.append(task)
+        return ready
+
+    def topological_sort(self) -> list[Task]:
+        """Return tasks in topological order using Kahn's algorithm."""
+        in_degree: dict[str, int] = {
+            tid: len(deps) for tid, deps in self.dependencies.items()
+        }
+        queue = [tid for tid, deg in in_degree.items() if deg == 0]
+        result: list[Task] = []
+
+        while queue:
+            node_id = queue.pop(0)
+            result.append(self.tasks[node_id])
+            for dep_id in self.dependents.get(node_id, []):
+                in_degree[dep_id] -= 1
+                if in_degree[dep_id] == 0:
+                    queue.append(dep_id)
+
+        if len(result) != len(self.tasks):
+            raise ValueError("Cycle detected in TaskDAG during topological sort")
+
+        return result
+
+    def get_all_tasks(self) -> list[Task]:
+        """Return all tasks in the DAG."""
+        return list(self.tasks.values())
