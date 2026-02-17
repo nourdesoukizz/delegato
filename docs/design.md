@@ -801,7 +801,7 @@ pytest-asyncio >= 0.24
 | 2 | `llm.py` (LiteLLM wrapper), `decomposition.py` (LLM-powered task decomposition) | Done |
 | 3 | `verification.py` (multi-judge consensus), `permissions.py` (privilege attenuation + circuit breakers) | Done |
 | 4 | `coordination.py` (parallel DAG execution), `delegator.py` (main orchestrator) | Done |
-| 5 | `examples/research_pipeline.py`, integration tests, README with architecture diagram | |
+| 5 | `examples/research_pipeline.py`, integration tests, README with architecture diagram | Done |
 
 ---
 
