@@ -10,6 +10,7 @@ from delegato.models import (
     Permission,
     Reversibility,
     Task,
+    TaskDAG,
     TaskResult,
     TaskStatus,
     TrustRecord,
@@ -20,6 +21,8 @@ from delegato.events import EventBus
 from delegato.trust import TrustTracker
 from delegato.assignment import AssignmentScorer
 from delegato.audit import AuditLog
+from delegato.llm import LLMError, complete, complete_json
+from delegato.decomposition import DecompositionEngine, DecompositionError
 
 __all__ = [
     # Models
@@ -32,6 +35,7 @@ __all__ = [
     "Permission",
     "Reversibility",
     "Task",
+    "TaskDAG",
     "TaskResult",
     "TaskStatus",
     "TrustRecord",
@@ -42,4 +46,11 @@ __all__ = [
     "TrustTracker",
     "AssignmentScorer",
     "AuditLog",
+    # LLM
+    "LLMError",
+    "complete",
+    "complete_json",
+    # Decomposition
+    "DecompositionEngine",
+    "DecompositionError",
 ]
