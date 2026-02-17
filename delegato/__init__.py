@@ -30,6 +30,8 @@ from delegato.permissions import (
     CircuitBreakResult,
     ComplexityFloorResult,
 )
+from delegato.coordination import CoordinationLoop, EscalationError
+from delegato.delegator import Delegator
 
 __all__ = [
     # Models
@@ -69,4 +71,9 @@ __all__ = [
     "PrivilegeEscalationError",
     "CircuitBreakResult",
     "ComplexityFloorResult",
+    # Coordination
+    "CoordinationLoop",
+    "EscalationError",
+    # Delegator
+    "Delegator",
 ]
