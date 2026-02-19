@@ -12,13 +12,23 @@ from delegato.models import Task, TaskDAG, VerificationMethod, VerificationSpec
 logger = logging.getLogger(__name__)
 
 DECOMPOSITION_SYSTEM_PROMPT = """\
-You are a task decomposition engine. Given a high-level goal, break it into \
-the smallest independent sub-tasks that can be:
-1. Assigned to a single agent
-2. Verified with a concrete acceptance criterion
+You are a task decomposition engine. Given a high-level goal, decide whether \
+it needs to be split into sub-tasks or can be handled as a single unit.
+
+**Decision rules — prefer FEWER sub-tasks:**
+1. If a single capable agent can produce the complete answer, return exactly \
+1 sub-task whose goal matches the original task verbatim.
+2. Only split when the task genuinely requires DIFFERENT capabilities \
+(e.g., "search the web AND then write code to analyze the results").
+3. Never split a task just because it has multiple parts if one agent can \
+handle all parts together (e.g., "list pros and cons" is ONE task, not two).
+4. When splitting IS needed, use 2-3 sub-tasks at most. Each sub-task must \
+produce a self-contained output that can be merged into a coherent whole.
+5. Never split a task that requires a single cohesive document, class, or \
+structured output (e.g., an API client class, a SWOT analysis, an essay).
 
 For each sub-task, specify:
-- goal: what needs to be done
+- goal: what needs to be done (include ALL original format/length requirements)
 - required_capabilities: list of skills needed (strings)
 - verification_method: how to check the output (one of: llm_judge, regex, schema, function, none)
 - verification_criteria: specific description of what "correct" looks like
@@ -40,7 +50,7 @@ class DecompositionEngine:
         *,
         model: str = "openai/gpt-4o",
         max_depth: int = 3,
-        max_subtasks: int = 6,
+        max_subtasks: int = 3,
         llm_call: Callable[..., Any] | None = None,
     ):
         self.model = model
@@ -131,7 +141,17 @@ class DecompositionEngine:
         return []
 
     def _resolve_verification_method(self, method_str: str) -> VerificationMethod:
-        """Convert string to VerificationMethod, defaulting to LLM_JUDGE on invalid."""
+        """Convert string to VerificationMethod, defaulting to LLM_JUDGE on invalid.
+
+        'function' is also mapped to LLM_JUDGE because decomposition cannot
+        provide the custom_fn that function verification requires.
+        """
+        if method_str == "function":
+            logger.info(
+                "Decomposed subtask requested 'function' verification; "
+                "falling back to LLM_JUDGE (no custom_fn available)"
+            )
+            return VerificationMethod.LLM_JUDGE
         try:
             return VerificationMethod(method_str)
         except ValueError:
