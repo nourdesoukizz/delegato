@@ -22,6 +22,7 @@ from delegato import (
     VerificationMethod,
     VerificationSpec,
 )
+from delegato.decomposition import DecompositionEngine
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -199,7 +200,9 @@ class TestMultiTaskDAG:
             _sub("C", deps=[0]),
             _sub("D", deps=[1, 2]),
         ]
-        d = Delegator(agents=[agent], llm_call=_mock_decompose(subtasks))
+        llm = _mock_decompose(subtasks)
+        engine = DecompositionEngine(llm_call=llm, max_subtasks=6)
+        d = Delegator(agents=[agent], llm_call=llm, decomposition_engine=engine)
         result = await d.run(_make_task())
         assert result.success is True
         assert order.index("A") < order.index("B")
@@ -223,7 +226,9 @@ class TestMultiTaskDAG:
             _sub("D", deps=[0]),
             _sub("E", deps=[1, 2, 3]),
         ]
-        d = Delegator(agents=[agent], llm_call=_mock_decompose(subtasks))
+        llm = _mock_decompose(subtasks)
+        engine = DecompositionEngine(llm_call=llm, max_subtasks=6)
+        d = Delegator(agents=[agent], llm_call=llm, decomposition_engine=engine)
         result = await d.run(_make_task())
         assert result.success is True
         assert order.index("A") == 0
@@ -244,7 +249,9 @@ class TestMultiTaskDAG:
             _sub("3", deps=[1]),
             _sub("4", deps=[2]),
         ]
-        d = Delegator(agents=[agent], llm_call=_mock_decompose(subtasks))
+        llm = _mock_decompose(subtasks)
+        engine = DecompositionEngine(llm_call=llm, max_subtasks=6)
+        d = Delegator(agents=[agent], llm_call=llm, decomposition_engine=engine)
         result = await d.run(_make_task())
         assert result.success is True
         assert order == ["1", "2", "3", "4"]
