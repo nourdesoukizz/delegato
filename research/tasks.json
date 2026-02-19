@@ -1,0 +1,879 @@
+[
+  {
+    "id": "R1",
+    "category": "research",
+    "difficulty": "easy",
+    "goal": "What company developed AlphaFold and in what year was it first released?",
+    "required_capabilities": ["web_search", "fact_checking"],
+    "verification": {
+      "method": "function",
+      "criteria": "Output must contain 'DeepMind' and '2018' or '2020' (v1 vs v2)",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 1,
+    "metadata": {},
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "atlas"
+  },
+  {
+    "id": "R2",
+    "category": "research",
+    "difficulty": "easy",
+    "goal": "Define retrieval-augmented generation (RAG) and provide one real-world product that uses it.",
+    "required_capabilities": ["web_search", "summarization"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Contains accurate definition of RAG with the key concept of combining retrieval with generation, plus names a real product",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 1,
+    "metadata": {},
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "atlas"
+  },
+  {
+    "id": "R3",
+    "category": "research",
+    "difficulty": "easy",
+    "goal": "Compare the context window sizes of GPT-4, Claude 3, and Gemini 1.5 Pro.",
+    "required_capabilities": ["web_search", "data_extraction"],
+    "verification": {
+      "method": "schema",
+      "criteria": "Output must be JSON with three entries, each having model name and context window size as integer",
+      "schema": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["model", "context_window"],
+          "properties": {
+            "model": {"type": "string"},
+            "context_window": {"type": "integer"}
+          }
+        },
+        "minItems": 3
+      },
+      "test_cases": null
+    },
+    "expected_subtask_count": 1,
+    "metadata": {},
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "atlas"
+  },
+  {
+    "id": "R4",
+    "category": "research",
+    "difficulty": "medium",
+    "goal": "Summarize the current state of quantum computing hardware. Cover at least 3 different companies and their approaches (superconducting, trapped ion, photonic, etc.).",
+    "required_capabilities": ["web_search", "summarization", "fact_checking"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Covers 3+ companies with named approaches, includes specific qubit counts or milestones, technically accurate",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 3,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "atlas"
+  },
+  {
+    "id": "R5",
+    "category": "research",
+    "difficulty": "medium",
+    "goal": "Create a timeline of major large language model releases from 2020 to 2025, including model name, organization, parameter count, and key innovation.",
+    "required_capabilities": ["web_search", "data_extraction", "fact_checking"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "JSON array of objects with model name, organization, parameter count, and key innovation fields. LLM judges factual accuracy",
+      "schema": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["model", "organization", "year", "parameters", "innovation"],
+          "properties": {
+            "model": {"type": "string"},
+            "organization": {"type": "string"},
+            "year": {"type": "integer"},
+            "parameters": {"type": "string"},
+            "innovation": {"type": "string"}
+          }
+        }
+      },
+      "test_cases": null
+    },
+    "expected_subtask_count": 3,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "atlas"
+  },
+  {
+    "id": "R6",
+    "category": "research",
+    "difficulty": "medium",
+    "goal": "What are the top 3 emerging trends in AI safety research as of 2025? For each, name at least 2 key papers or research groups.",
+    "required_capabilities": ["web_search", "summarization", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Identifies 3 distinct trends, names real papers or groups for each, trends are genuinely current",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 4,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "atlas"
+  },
+  {
+    "id": "R7",
+    "category": "research",
+    "difficulty": "medium",
+    "goal": "Compare the AI regulation approaches of the EU AI Act, the US Executive Order on AI, and China's AI governance framework. Focus on risk classification methods.",
+    "required_capabilities": ["web_search", "summarization", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Covers all 3 jurisdictions, specifically addresses risk classification, identifies key differences, factually accurate",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 4,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "atlas"
+  },
+  {
+    "id": "R8",
+    "category": "research",
+    "difficulty": "hard",
+    "goal": "Research the debate around AI consciousness. Present the strongest arguments both for and against the possibility of AI consciousness, citing specific researchers and their positions.",
+    "required_capabilities": ["web_search", "summarization", "reasoning", "fact_checking"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Presents both sides fairly, names real researchers with accurate positions, doesn't strawman either side, includes at least 2 arguments per side",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 5,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "atlas"
+  },
+  {
+    "id": "R9",
+    "category": "research",
+    "difficulty": "hard",
+    "goal": "Explain how mixture-of-experts (MoE) architectures work in modern LLMs. Cover the routing mechanism, training challenges, and compare at least 2 specific implementations (e.g., Mixtral, Switch Transformer, DeepSeek-MoE).",
+    "required_capabilities": ["web_search", "summarization", "reasoning", "fact_checking"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Technically accurate explanation of MoE routing, discusses real training challenges like load balancing, compares 2+ specific implementations with correct architectural details",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 5,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "atlas"
+  },
+  {
+    "id": "R10",
+    "category": "research",
+    "difficulty": "hard",
+    "goal": "Based on current trends in AI chip development, analyze which semiconductor companies are best positioned for the AI hardware market in 2026-2027. Consider NVIDIA, AMD, Intel, and at least 2 startups.",
+    "required_capabilities": ["web_search", "data_analysis", "reasoning", "fact_checking"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Covers 4+ companies, uses specific product names and specs, reasoning is grounded in real data not speculation, acknowledges uncertainty",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 6,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "atlas"
+  },
+  {
+    "id": "C1",
+    "category": "coding",
+    "difficulty": "easy",
+    "goal": "Write a Python function that takes a list of integers and returns the second largest unique value. Handle edge cases (empty list, all same values).",
+    "required_capabilities": ["code_generation"],
+    "verification": {
+      "method": "function",
+      "criteria": "Run against test cases: [1,2,3,4,5]->4, [5,5,4,3]->4, [1]->None, []->None, [3,3,3]->None",
+      "schema": null,
+      "test_cases": [
+        {"input": [1, 2, 3, 4, 5], "expected": 4},
+        {"input": [5, 5, 4, 3], "expected": 4},
+        {"input": [1], "expected": null},
+        {"input": [], "expected": null},
+        {"input": [3, 3, 3], "expected": null}
+      ]
+    },
+    "expected_subtask_count": 1,
+    "metadata": {},
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "spark"
+  },
+  {
+    "id": "C2",
+    "category": "coding",
+    "difficulty": "easy",
+    "goal": "Write a Python function that validates email addresses. It should accept standard formats (user@domain.com) and reject invalid ones (no @, double dots, etc.).",
+    "required_capabilities": ["code_generation"],
+    "verification": {
+      "method": "function",
+      "criteria": "Run against test cases with valid and invalid email lists",
+      "schema": null,
+      "test_cases": [
+        {"input": "user@domain.com", "expected": true},
+        {"input": "user.name@domain.co.uk", "expected": true},
+        {"input": "user+tag@domain.com", "expected": true},
+        {"input": "nodomain", "expected": false},
+        {"input": "user@", "expected": false},
+        {"input": "@domain.com", "expected": false},
+        {"input": "user@domain..com", "expected": false},
+        {"input": "", "expected": false}
+      ]
+    },
+    "expected_subtask_count": 1,
+    "metadata": {},
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "spark"
+  },
+  {
+    "id": "C3",
+    "category": "coding",
+    "difficulty": "easy",
+    "goal": "Write a Python function that converts a flat list of key-value pairs ['name', 'Alice', 'age', '30', 'city', 'NYC'] into a dictionary {'name': 'Alice', 'age': '30', 'city': 'NYC'}. Handle odd-length lists by ignoring the last element.",
+    "required_capabilities": ["code_generation"],
+    "verification": {
+      "method": "function",
+      "criteria": "Run against test cases",
+      "schema": null,
+      "test_cases": [
+        {"input": ["name", "Alice", "age", "30", "city", "NYC"], "expected": {"name": "Alice", "age": "30", "city": "NYC"}},
+        {"input": ["a", "1", "b"], "expected": {"a": "1"}},
+        {"input": [], "expected": {}},
+        {"input": ["solo"], "expected": {}}
+      ]
+    },
+    "expected_subtask_count": 1,
+    "metadata": {},
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "spark"
+  },
+  {
+    "id": "C4",
+    "category": "coding",
+    "difficulty": "medium",
+    "goal": "Write a Python class that wraps a REST API client with retry logic, exponential backoff, and timeout handling. Include methods for GET and POST requests. Use httpx as the HTTP library.",
+    "required_capabilities": ["code_generation", "debugging"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Code must import httpx, class must have get/post methods, LLM judges code quality and whether retry/backoff logic is correct",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 3,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "spark"
+  },
+  {
+    "id": "C5",
+    "category": "coding",
+    "difficulty": "medium",
+    "goal": "Write a Python script that reads a CSV file, removes rows with missing values in specified columns, normalizes numeric columns to 0-1 range, and outputs a cleaned CSV. Use pandas.",
+    "required_capabilities": ["code_generation", "data_analysis"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Code uses pandas, implements missing value removal for specified columns, normalizes numeric columns to 0-1 range, outputs CSV. Logic is correct and handles edge cases",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 3,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "spark"
+  },
+  {
+    "id": "C6",
+    "category": "coding",
+    "difficulty": "medium",
+    "goal": "Implement a least recently used (LRU) cache in Python as a class with get(key) and put(key, value) methods. It should have O(1) time complexity for both operations. Include a capacity parameter.",
+    "required_capabilities": ["code_generation", "debugging"],
+    "verification": {
+      "method": "function",
+      "criteria": "Run against sequence of operations, verify outputs and that capacity is respected",
+      "schema": null,
+      "test_cases": [
+        {"operations": [["put", 1, 1], ["put", 2, 2], ["get", 1], ["put", 3, 3], ["get", 2]], "capacity": 2, "expected_gets": [1, -1]}
+      ]
+    },
+    "expected_subtask_count": 2,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "spark"
+  },
+  {
+    "id": "C7",
+    "category": "coding",
+    "difficulty": "medium",
+    "goal": "Given this function (provided in metadata), write a comprehensive pytest test suite that covers: normal cases, edge cases, error cases, and boundary conditions. Aim for at least 10 test cases.",
+    "required_capabilities": ["code_generation", "debugging"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Test suite has at least 10 test cases covering normal, edge, error, and boundary conditions. Tests are well-structured and would pass against a correct implementation",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 3,
+    "metadata": {
+      "function_code": "def sort_strings(strings: list[str], reverse: bool = False, case_sensitive: bool = True, key: str | None = None) -> list[str]:\n    \"\"\"Sort a list of strings with various options.\n    \n    Args:\n        strings: List of strings to sort\n        reverse: If True, sort in descending order\n        case_sensitive: If True, uppercase letters sort before lowercase\n        key: If 'length', sort by string length; if 'last_char', sort by last character\n    \n    Returns:\n        New sorted list (does not modify input)\n    \n    Raises:\n        TypeError: If strings is not a list or contains non-strings\n        ValueError: If key is not None, 'length', or 'last_char'\n    \"\"\"\n    if not isinstance(strings, list):\n        raise TypeError('Expected a list')\n    if any(not isinstance(s, str) for s in strings):\n        raise TypeError('All elements must be strings')\n    if key not in (None, 'length', 'last_char'):\n        raise ValueError(f'Invalid key: {key}')\n    \n    sort_key = None\n    if key == 'length':\n        sort_key = len\n    elif key == 'last_char':\n        sort_key = lambda s: s[-1] if s else ''\n    \n    items = strings[:]\n    if not case_sensitive:\n        if sort_key:\n            original_key = sort_key\n            sort_key = lambda s: (original_key(s), s.lower())\n        else:\n            sort_key = str.lower\n    \n    return sorted(items, key=sort_key, reverse=reverse)"
+    },
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "spark"
+  },
+  {
+    "id": "C8",
+    "category": "coding",
+    "difficulty": "hard",
+    "goal": "Write a Python async task queue that supports: adding tasks with priorities, concurrent execution with a configurable worker count, task cancellation, and a method to wait for all tasks to complete. Use asyncio.",
+    "required_capabilities": ["code_generation", "debugging", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Functional tests for enqueue/dequeue/cancel/wait, LLM judges whether concurrency is correctly implemented using asyncio primitives",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 5,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "spark"
+  },
+  {
+    "id": "C9",
+    "category": "coding",
+    "difficulty": "hard",
+    "goal": "Write a Python markdown-to-HTML converter that handles: headings (h1-h3), bold, italic, links, unordered lists, and code blocks. Do not use any external libraries.",
+    "required_capabilities": ["code_generation", "debugging"],
+    "verification": {
+      "method": "function",
+      "criteria": "Run against 10 markdown snippets, compare output to expected HTML",
+      "schema": null,
+      "test_cases": [
+        {"input": "# Heading 1", "expected": "<h1>Heading 1</h1>"},
+        {"input": "## Heading 2", "expected": "<h2>Heading 2</h2>"},
+        {"input": "### Heading 3", "expected": "<h3>Heading 3</h3>"},
+        {"input": "**bold text**", "expected": "<p><strong>bold text</strong></p>"},
+        {"input": "*italic text*", "expected": "<p><em>italic text</em></p>"},
+        {"input": "[link](http://example.com)", "expected": "<p><a href=\"http://example.com\">link</a></p>"},
+        {"input": "- item 1\n- item 2", "expected": "<ul><li>item 1</li><li>item 2</li></ul>"},
+        {"input": "```\ncode\n```", "expected": "<pre><code>code</code></pre>"},
+        {"input": "normal text", "expected": "<p>normal text</p>"},
+        {"input": "**bold** and *italic*", "expected": "<p><strong>bold</strong> and <em>italic</em></p>"}
+      ]
+    },
+    "expected_subtask_count": 5,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "spark"
+  },
+  {
+    "id": "C10",
+    "category": "coding",
+    "difficulty": "hard",
+    "goal": "Write a Python module for rate limiting with these strategies: fixed window, sliding window, and token bucket. Each should be a class implementing a common interface with allow(key) -> bool method. Include a factory function that creates the right limiter from a config dict.",
+    "required_capabilities": ["code_generation", "debugging", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Functional tests for each strategy, LLM judges architecture quality and interface consistency. All three classes implement a common interface with allow(key) method. Factory function works correctly",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 6,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "spark"
+  },
+  {
+    "id": "A1",
+    "category": "analysis",
+    "difficulty": "easy",
+    "goal": "List 5 pros and 5 cons of using microservices architecture vs monolithic architecture for a startup with a team of 5 engineers.",
+    "required_capabilities": ["reasoning", "summarization"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "JSON with pros array and cons array each of length 5, LLM judges relevance to startup context",
+      "schema": {
+        "type": "object",
+        "required": ["pros", "cons"],
+        "properties": {
+          "pros": {"type": "array", "items": {"type": "string"}, "minItems": 5, "maxItems": 5},
+          "cons": {"type": "array", "items": {"type": "string"}, "minItems": 5, "maxItems": 5}
+        }
+      },
+      "test_cases": null
+    },
+    "expected_subtask_count": 1,
+    "metadata": {},
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "pixel"
+  },
+  {
+    "id": "A2",
+    "category": "analysis",
+    "difficulty": "easy",
+    "goal": "A SaaS company has 10,000 users, 5% monthly churn, and acquires 800 new users per month. Project the user count for each of the next 6 months.",
+    "required_capabilities": ["data_analysis", "reasoning"],
+    "verification": {
+      "method": "function",
+      "criteria": "Verify calculations: month 1 = 10000 - 500 + 800 = 10300, etc.",
+      "schema": null,
+      "test_cases": [
+        {"month": 1, "expected": 10300},
+        {"month": 2, "expected": 10585},
+        {"month": 3, "expected": 10856},
+        {"month": 4, "expected": 11113},
+        {"month": 5, "expected": 11357},
+        {"month": 6, "expected": 11589}
+      ]
+    },
+    "expected_subtask_count": 1,
+    "metadata": {},
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "pixel"
+  },
+  {
+    "id": "A3",
+    "category": "analysis",
+    "difficulty": "easy",
+    "goal": "Classify these 10 customer support tickets into categories: billing, technical, feature_request, or account_access. Return as JSON.",
+    "required_capabilities": ["reasoning"],
+    "verification": {
+      "method": "schema",
+      "criteria": "JSON array of 10 objects with ticket_id and category from allowed values",
+      "schema": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["ticket_id", "category"],
+          "properties": {
+            "ticket_id": {"type": "integer"},
+            "category": {"type": "string", "enum": ["billing", "technical", "feature_request", "account_access"]}
+          }
+        },
+        "minItems": 10,
+        "maxItems": 10
+      },
+      "test_cases": null
+    },
+    "expected_subtask_count": 1,
+    "metadata": {
+      "tickets": [
+        {"id": 1, "text": "I was charged twice for my subscription this month. Please refund the extra charge."},
+        {"id": 2, "text": "The app crashes every time I try to upload a file larger than 10MB."},
+        {"id": 3, "text": "It would be great if you could add dark mode to the dashboard."},
+        {"id": 4, "text": "I forgot my password and the reset email never arrived."},
+        {"id": 5, "text": "Can you add an option to export reports as PDF?"},
+        {"id": 6, "text": "My invoice shows the wrong billing address. How do I update it?"},
+        {"id": 7, "text": "The search function returns no results even though I know the data exists."},
+        {"id": 8, "text": "I need to transfer my account to a different email address."},
+        {"id": 9, "text": "Please add integration with Slack for notifications."},
+        {"id": 10, "text": "The API returns a 500 error when I send a POST request with nested JSON."}
+      ]
+    },
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "pixel"
+  },
+  {
+    "id": "A4",
+    "category": "analysis",
+    "difficulty": "medium",
+    "goal": "Perform a SWOT analysis for a company entering the AI code review market in 2026. Consider existing competitors (GitHub Copilot, CodeRabbit, Sourcery), market trends, and technical barriers.",
+    "required_capabilities": ["web_search", "reasoning", "summarization"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Contains all 4 SWOT quadrants, names real competitors, identifies specific technical barriers, reasoning is grounded not generic",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 4,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "pixel"
+  },
+  {
+    "id": "A5",
+    "category": "analysis",
+    "difficulty": "medium",
+    "goal": "Given this dataset of monthly website traffic (provided in metadata), identify: the overall trend, any seasonal patterns, the month with the highest growth rate, and any anomalies. Present findings as structured JSON.",
+    "required_capabilities": ["data_analysis", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "JSON structure validated, anomaly month correctly identified (month 14), trend direction correct (upward), seasonal pattern noted",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 3,
+    "metadata": {
+      "traffic_data": [
+        {"month": 1, "visitors": 10000},
+        {"month": 2, "visitors": 10500},
+        {"month": 3, "visitors": 11200},
+        {"month": 4, "visitors": 10800},
+        {"month": 5, "visitors": 11500},
+        {"month": 6, "visitors": 12100},
+        {"month": 7, "visitors": 11800},
+        {"month": 8, "visitors": 12500},
+        {"month": 9, "visitors": 13200},
+        {"month": 10, "visitors": 12900},
+        {"month": 11, "visitors": 13600},
+        {"month": 12, "visitors": 14500},
+        {"month": 13, "visitors": 14100},
+        {"month": 14, "visitors": 8500},
+        {"month": 15, "visitors": 15200},
+        {"month": 16, "visitors": 14900},
+        {"month": 17, "visitors": 15700},
+        {"month": 18, "visitors": 16400},
+        {"month": 19, "visitors": 16000},
+        {"month": 20, "visitors": 16800},
+        {"month": 21, "visitors": 17500},
+        {"month": 22, "visitors": 17100},
+        {"month": 23, "visitors": 17900},
+        {"month": 24, "visitors": 18800}
+      ]
+    },
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "pixel"
+  },
+  {
+    "id": "A6",
+    "category": "analysis",
+    "difficulty": "medium",
+    "goal": "Build a weighted decision matrix comparing 4 cloud providers (AWS, GCP, Azure, Oracle Cloud) for a machine learning startup. Criteria: GPU availability, pricing, ML tooling, documentation quality, startup credits. Assign weights and scores with justification.",
+    "required_capabilities": ["web_search", "data_analysis", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "JSON with matrix structure, weights sum to 1.0, all scores 1-10, LLM judges whether justifications are reasonable",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 4,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "pixel"
+  },
+  {
+    "id": "A7",
+    "category": "analysis",
+    "difficulty": "medium",
+    "goal": "A web application's response time increased from 200ms to 2s over the past week. Given these system metrics (provided in metadata): CPU usage, memory usage, database query times, network latency, and deployment log — identify the most likely root cause and suggest 3 remediation steps.",
+    "required_capabilities": ["data_analysis", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Correctly identifies database query time as root cause, links to deployment, remediation steps are specific and actionable",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 4,
+    "metadata": {
+      "metrics": {
+        "cpu_usage_percent": [45, 47, 46, 48, 50, 52, 51],
+        "memory_usage_percent": [62, 63, 62, 64, 63, 65, 64],
+        "db_query_time_ms": [15, 16, 14, 180, 195, 210, 1850],
+        "network_latency_ms": [2, 2, 3, 2, 2, 3, 2]
+      },
+      "deployment_log": [
+        {"day": 1, "event": "No deployments"},
+        {"day": 2, "event": "No deployments"},
+        {"day": 3, "event": "Deployed v2.4.1 - Added new analytics queries to dashboard endpoint"},
+        {"day": 4, "event": "No deployments"},
+        {"day": 5, "event": "No deployments"},
+        {"day": 6, "event": "No deployments"},
+        {"day": 7, "event": "No deployments"}
+      ]
+    },
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "pixel"
+  },
+  {
+    "id": "A8",
+    "category": "analysis",
+    "difficulty": "hard",
+    "goal": "Build a simple financial projection for a B2B SaaS startup. Given: $50/month price, 2% monthly conversion rate from 10,000 free users, 3% monthly churn, $5,000/month fixed costs, $2/user variable cost. Project revenue, costs, and profit for 12 months. Identify the break-even month.",
+    "required_capabilities": ["data_analysis", "reasoning", "code_generation"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Month-by-month calculations are correct, break-even month is identified around month 8-9, shows revenue, costs, and profit per month",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 5,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "pixel"
+  },
+  {
+    "id": "A9",
+    "category": "analysis",
+    "difficulty": "hard",
+    "goal": "Analyze the competitive landscape of the vector database market. Cover at least 5 products (Pinecone, Weaviate, Milvus, Qdrant, ChromaDB), comparing: hosting model, pricing structure, max supported dimensions, unique features, and primary use case. Identify the market leader and the fastest-growing challenger.",
+    "required_capabilities": ["web_search", "data_analysis", "reasoning", "summarization"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Covers 5+ products with accurate technical details, comparison is structured, market leader/challenger claims are justified with reasoning",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 6,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "pixel"
+  },
+  {
+    "id": "A10",
+    "category": "analysis",
+    "difficulty": "hard",
+    "goal": "Perform a risk assessment for deploying an AI-powered medical triage chatbot. Identify at least 8 risks across categories: technical, regulatory, ethical, and operational. For each risk, provide likelihood (1-5), impact (1-5), and a specific mitigation strategy.",
+    "required_capabilities": ["reasoning", "summarization", "fact_checking"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "JSON with 8+ risks, each having category/likelihood/impact/mitigation, LLM judges whether risks are realistic and mitigations are specific",
+      "schema": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["risk", "category", "likelihood", "impact", "mitigation"],
+          "properties": {
+            "risk": {"type": "string"},
+            "category": {"type": "string", "enum": ["technical", "regulatory", "ethical", "operational"]},
+            "likelihood": {"type": "integer", "minimum": 1, "maximum": 5},
+            "impact": {"type": "integer", "minimum": 1, "maximum": 5},
+            "mitigation": {"type": "string"}
+          }
+        },
+        "minItems": 8
+      },
+      "test_cases": null
+    },
+    "expected_subtask_count": 5,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "pixel"
+  },
+  {
+    "id": "W1",
+    "category": "writing",
+    "difficulty": "easy",
+    "goal": "Write a professional email declining a meeting invitation due to a scheduling conflict. Suggest 3 alternative time slots next week. Keep it under 100 words.",
+    "required_capabilities": ["report_writing"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Word count <= 100, contains 3 time slots, LLM judges professional tone",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 1,
+    "metadata": {},
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "sage"
+  },
+  {
+    "id": "W2",
+    "category": "writing",
+    "difficulty": "easy",
+    "goal": "Write a 150-word product description for a wireless noise-canceling headphone aimed at remote workers. Emphasize comfort for long wear, microphone quality for calls, and battery life.",
+    "required_capabilities": ["report_writing", "summarization"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Word count 120-180, mentions all 3 features (comfort, microphone, battery), LLM judges marketing quality",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 1,
+    "metadata": {},
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "sage"
+  },
+  {
+    "id": "W3",
+    "category": "writing",
+    "difficulty": "easy",
+    "goal": "Summarize the following 500-word article (provided in metadata) into exactly 3 bullet points, each 1-2 sentences.",
+    "required_capabilities": ["summarization"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Exactly 3 bullet points, each 1-2 sentences, LLM judges accuracy of summary",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 1,
+    "metadata": {
+      "article": "The Rise of Edge AI: How On-Device Intelligence Is Changing Computing\n\nThe artificial intelligence industry is undergoing a fundamental shift. While cloud-based AI services from companies like OpenAI, Google, and Anthropic continue to dominate headlines, a quieter revolution is happening at the edge — on smartphones, IoT devices, and embedded systems where AI models run locally without sending data to remote servers.\n\nThis trend, known as edge AI, is driven by three converging forces. First, hardware advances have made it possible to run sophisticated neural networks on chips that consume just a few watts of power. Companies like Qualcomm, Apple, and MediaTek have integrated dedicated neural processing units (NPUs) into their latest mobile processors, enabling real-time AI inference without cloud connectivity.\n\nSecond, privacy regulations are making cloud-based AI processing increasingly complicated. The EU's AI Act and similar legislation worldwide require companies to carefully manage how user data is processed. Running AI models on-device eliminates many of these concerns because personal data never leaves the user's hardware. This is particularly important for healthcare applications, where patient data sensitivity makes cloud processing a regulatory minefield.\n\nThird, latency requirements for many AI applications make cloud round-trips impractical. Autonomous vehicles need to make split-second decisions. Industrial robots must react to sensor data in milliseconds. Augmented reality glasses need to process visual information in real-time. In all these cases, the 50-200 millisecond latency of a cloud API call is simply too slow.\n\nThe market is responding rapidly. According to recent industry reports, the edge AI market is projected to reach $80 billion by 2028, growing at a compound annual rate of over 25%. This growth is attracting significant investment from both established tech giants and startups.\n\nHowever, edge AI faces its own challenges. Model compression — the process of shrinking large AI models to fit on constrained hardware — inevitably involves trade-offs in accuracy. Techniques like quantization, pruning, and knowledge distillation can reduce model sizes by 10-100x, but each comes with its own limitations. Quantization, for example, can introduce subtle errors in mathematical calculations that accumulate across layers of a neural network.\n\nAnother challenge is the fragmentation of edge AI hardware and software ecosystems. Unlike cloud AI, where developers can target a relatively small number of GPU types, edge deployments must contend with hundreds of different chip architectures, operating systems, and runtime environments. This fragmentation increases development costs and makes it difficult to optimize models for every target device.\n\nDespite these challenges, the trajectory is clear. The future of AI is not purely in the cloud or purely at the edge — it's a hybrid architecture where cloud AI handles complex reasoning and training while edge AI manages real-time inference and privacy-sensitive processing. Companies that master this hybrid approach will have a significant competitive advantage in the coming years."
+    },
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "naive_routing": "sage"
+  },
+  {
+    "id": "W4",
+    "category": "writing",
+    "difficulty": "medium",
+    "goal": "Write a 400-word blog post explaining why startups should consider using open-source LLMs instead of proprietary APIs. Include an introduction, 3 main arguments with supporting points, and a conclusion.",
+    "required_capabilities": ["report_writing", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "350-450 words, has clear intro/body/conclusion structure, 3 distinct arguments, each supported with specific reasoning, not generic",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 3,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "sage"
+  },
+  {
+    "id": "W5",
+    "category": "writing",
+    "difficulty": "medium",
+    "goal": "Write API documentation for a user authentication endpoint. Include: endpoint URL, HTTP method, request headers, request body schema with field descriptions, response schemas for success (200) and error cases (400, 401, 500), and one curl example.",
+    "required_capabilities": ["report_writing", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Contains all required sections (endpoint URL, method, headers, request body, response schemas for 200/400/401/500, curl example), LLM judges technical accuracy and completeness",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 3,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "sage"
+  },
+  {
+    "id": "W6",
+    "category": "writing",
+    "difficulty": "medium",
+    "goal": "Write a 300-word balanced review comparing Python and Rust for building CLI tools. Cover: ease of development, performance, ecosystem/libraries, and learning curve. End with a recommendation based on use case.",
+    "required_capabilities": ["report_writing", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "250-350 words, covers all 4 dimensions, balanced (not heavily biased), recommendation is nuanced",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 3,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "sage"
+  },
+  {
+    "id": "W7",
+    "category": "writing",
+    "difficulty": "medium",
+    "goal": "Write a post-mortem incident report for a 45-minute production outage caused by a misconfigured database migration. Include: timeline, root cause, impact, resolution, and 3 action items to prevent recurrence.",
+    "required_capabilities": ["report_writing", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Contains all 5 sections, timeline is specific with timestamps, root cause is clear, action items are specific and actionable",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 3,
+    "metadata": {},
+    "timeout_seconds": 120,
+    "max_retries": 2,
+    "naive_routing": "sage"
+  },
+  {
+    "id": "W8",
+    "category": "writing",
+    "difficulty": "hard",
+    "goal": "Write a 600-word explainer article about how transformer attention mechanisms work, aimed at software engineers with no ML background. Use at least 2 analogies to explain complex concepts. Include a simple worked example.",
+    "required_capabilities": ["report_writing", "reasoning", "summarization"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "500-700 words, appropriate for non-ML audience, contains 2+ analogies, includes worked example with actual numbers, technically accurate",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 5,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "sage"
+  },
+  {
+    "id": "W9",
+    "category": "writing",
+    "difficulty": "hard",
+    "goal": "Write a 500-word project proposal for building an internal AI-powered code review tool. Include: problem statement, proposed solution with technical approach, success metrics, timeline (3 milestones), and estimated resource requirements.",
+    "required_capabilities": ["report_writing", "reasoning"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "400-600 words, all 5 sections present, technical approach is specific not hand-wavy, metrics are measurable, timeline is realistic",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 5,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "sage"
+  },
+  {
+    "id": "W10",
+    "category": "writing",
+    "difficulty": "hard",
+    "goal": "Write two versions of an announcement about a company adopting AI-assisted coding tools: (1) a 200-word version for the engineering team focusing on technical benefits and workflow changes, (2) a 200-word version for executive leadership focusing on ROI, productivity gains, and risk mitigation.",
+    "required_capabilities": ["report_writing", "reasoning", "summarization"],
+    "verification": {
+      "method": "llm_judge",
+      "criteria": "Two distinct versions, each 150-250 words, engineering version uses technical language and discusses workflow, executive version focuses on business outcomes, same core message adapted to audience",
+      "schema": null,
+      "test_cases": null
+    },
+    "expected_subtask_count": 5,
+    "metadata": {},
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "naive_routing": "sage"
+  }
+]
