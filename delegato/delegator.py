@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from collections.abc import Callable, Coroutine
 from typing import Any
@@ -24,6 +25,25 @@ from delegato.models import (
 from delegato.permissions import PermissionManager
 from delegato.trust import TrustTracker
 from delegato.verification import VerificationEngine
+
+logger = logging.getLogger(__name__)
+
+SYNTHESIS_SYSTEM_PROMPT = """\
+You are an output synthesis engine. You receive the original task goal and \
+multiple sub-task outputs. Your job is to merge them into ONE coherent response \
+that looks like it was written by a single author.
+
+Rules:
+1. Match the original task's format, length, and structure requirements exactly.
+2. Remove duplication — if two sub-tasks cover the same point, keep the best version.
+3. Fill gaps — if the original task asks for something no sub-task fully covered, \
+   infer it from context or note it briefly.
+4. Create narrative flow — add transitions, unify tone, fix references.
+5. The final output must be a COMPLETE, STANDALONE answer to the original task.
+6. Do NOT mention sub-tasks, agents, or the synthesis process in your output.
+
+Return JSON: {"output": "<the merged response>"}\
+"""
 
 
 class Delegator:
@@ -48,6 +68,7 @@ class Delegator:
         self._model = model
         self._max_parallel = max_parallel
         self._max_reassignments = max_reassignments
+        self._llm_call = llm_call
 
         # Wire up components — create defaults if not provided
         self._event_bus = event_bus or EventBus()
@@ -161,9 +182,13 @@ class Delegator:
         total_cost = sum(r.cost for r in results)
 
         # Collect outputs
-        output = [r.output for r in results if r.success] or None
-        if output and len(output) == 1:
-            output = output[0]
+        successful_outputs = [r.output for r in results if r.success]
+        if len(successful_outputs) > 1 and self._llm_call is not None:
+            output = await self._synthesize_output(task, successful_outputs)
+        elif len(successful_outputs) == 1:
+            output = successful_outputs[0]
+        else:
+            output = successful_outputs or None
 
         return DelegationResult(
             task=task,
@@ -174,6 +199,34 @@ class Delegator:
             total_duration=elapsed,
             reassignments=reassignments,
         )
+
+    async def _synthesize_output(
+        self, task: Task, outputs: list[Any]
+    ) -> Any:
+        """Merge multiple subtask outputs into a single coherent answer."""
+        numbered = "\n\n".join(
+            f"--- Sub-task {i+1} output ---\n{o}" for i, o in enumerate(outputs)
+        )
+        messages = [
+            {"role": "system", "content": SYNTHESIS_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": (
+                    f"Original task goal:\n{task.goal}\n\n"
+                    f"Sub-task outputs to merge:\n{numbered}"
+                ),
+            },
+        ]
+        try:
+            response = await self._llm_call(messages)
+            if isinstance(response, dict) and "output" in response:
+                return response["output"]
+            # If the LLM returned something unexpected, fall back
+            logger.warning("Synthesis returned unexpected format, falling back to concatenation")
+            return "\n\n".join(str(o) for o in outputs)
+        except Exception:
+            logger.warning("Synthesis failed, falling back to concatenation", exc_info=True)
+            return "\n\n".join(str(o) for o in outputs)
 
     async def _fast_path(
         self, task: Task, agent_id: str, start: float
