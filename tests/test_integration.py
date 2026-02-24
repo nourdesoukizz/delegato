@@ -25,6 +25,11 @@ from delegato import (
 from delegato.decomposition import DecompositionEngine
 
 
+# Capabilities spread across agents — no single agent covers ≥60%, allowing
+# the decomposition gate to pass through to Tier 2.
+_DECOMPOSE_CAPS = ["code", "analysis", "web_search"]
+
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -107,6 +112,42 @@ def _mock_routing_llm(subtasks: list[dict], verify_fn=None):
     return llm_call
 
 
+def _mock_force_decompose(subtasks: list[dict]):
+    """Mock LLM that fails smart route verification, forcing decomposition path."""
+    verify_count = 0
+
+    async def llm_call(messages):
+        nonlocal verify_count
+        system = messages[0]["content"].lower()
+        if "task decomposition" in system:
+            return {"subtasks": subtasks}
+        verify_count += 1
+        if verify_count == 1:  # Smart route verify → fail
+            return {"score": 0.3, "reasoning": "needs decomposition"}
+        return {"score": 1.0, "reasoning": "ok"}
+
+    return llm_call
+
+
+def _mock_force_routing_llm(subtasks: list[dict], verify_fn=None):
+    """LLM that fails smart route verify, then routes to verify_fn for subtasks."""
+    verify_count = 0
+
+    async def llm_call(messages):
+        nonlocal verify_count
+        system = messages[0]["content"].lower()
+        if "task decomposition" in system:
+            return {"subtasks": subtasks}
+        verify_count += 1
+        if verify_count == 1:  # Smart route verify → fail
+            return {"score": 0.3, "reasoning": "needs decomposition"}
+        if verify_fn is not None:
+            return await verify_fn(messages)
+        return {"score": 1.0, "reasoning": "ok"}
+
+    return llm_call
+
+
 # ── TestFullPipelineIntegration ──────────────────────────────────────────────
 
 
@@ -134,17 +175,21 @@ class TestFullPipelineIntegration:
             _sub("Step 2", deps=[0]),
             _sub("Step 3", deps=[1]),
         ]
-        d = Delegator(agents=[agent], llm_call=_mock_decompose(subtasks))
-        result = await d.run(_make_task())
+        d = Delegator(agents=[agent], llm_call=_mock_force_decompose(subtasks))
+        result = await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, method=VerificationMethod.LLM_JUDGE))
         assert result.success is True
-        assert order == ["Step 1", "Step 2", "Step 3"]
+        # Smart route calls handler once with original task, then subtasks run in order
+        assert "Step 1" in order
+        assert "Step 2" in order
+        assert "Step 3" in order
+        assert order.index("Step 1") < order.index("Step 2") < order.index("Step 3")
 
     async def test_parallel_independent_subtasks(self):
         """Independent subtasks all complete."""
         agent = _make_agent()
         subtasks = [_sub("A"), _sub("B"), _sub("C")]
-        d = Delegator(agents=[agent], llm_call=_mock_decompose(subtasks))
-        result = await d.run(_make_task())
+        d = Delegator(agents=[agent], llm_call=_mock_force_decompose(subtasks))
+        result = await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, method=VerificationMethod.LLM_JUDGE))
         assert result.success is True
         assert len(result.subtask_results) == 3
 
@@ -158,8 +203,8 @@ class TestFullPipelineIntegration:
 
         agent = _make_agent(handler=numbered_handler)
         subtasks = [_sub("one"), _sub("two")]
-        d = Delegator(agents=[agent], llm_call=_mock_decompose(subtasks))
-        result = await d.run(_make_task())
+        d = Delegator(agents=[agent], llm_call=_mock_force_decompose(subtasks))
+        result = await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, method=VerificationMethod.LLM_JUDGE))
         assert result.success is True
         outputs = [r.output for r in result.subtask_results]
         assert "result-one" in outputs
@@ -200,10 +245,10 @@ class TestMultiTaskDAG:
             _sub("C", deps=[0]),
             _sub("D", deps=[1, 2]),
         ]
-        llm = _mock_decompose(subtasks)
+        llm = _mock_force_decompose(subtasks)
         engine = DecompositionEngine(llm_call=llm, max_subtasks=6)
         d = Delegator(agents=[agent], llm_call=llm, decomposition_engine=engine)
-        result = await d.run(_make_task())
+        result = await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, method=VerificationMethod.LLM_JUDGE))
         assert result.success is True
         assert order.index("A") < order.index("B")
         assert order.index("A") < order.index("C")
@@ -226,13 +271,15 @@ class TestMultiTaskDAG:
             _sub("D", deps=[0]),
             _sub("E", deps=[1, 2, 3]),
         ]
-        llm = _mock_decompose(subtasks)
+        llm = _mock_force_decompose(subtasks)
         engine = DecompositionEngine(llm_call=llm, max_subtasks=6)
         d = Delegator(agents=[agent], llm_call=llm, decomposition_engine=engine)
-        result = await d.run(_make_task())
+        result = await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, method=VerificationMethod.LLM_JUDGE))
         assert result.success is True
-        assert order.index("A") == 0
-        assert order.index("E") == len(order) - 1
+        # Smart route adds original task call before subtasks; check subtask ordering
+        subtask_order = [g for g in order if g in ("A", "B", "C", "D", "E")]
+        assert subtask_order[0] == "A"
+        assert subtask_order[-1] == "E"
 
     async def test_deterministic_sequential_order(self):
         """Strictly sequential tasks always execute in order."""
@@ -249,12 +296,14 @@ class TestMultiTaskDAG:
             _sub("3", deps=[1]),
             _sub("4", deps=[2]),
         ]
-        llm = _mock_decompose(subtasks)
+        llm = _mock_force_decompose(subtasks)
         engine = DecompositionEngine(llm_call=llm, max_subtasks=6)
         d = Delegator(agents=[agent], llm_call=llm, decomposition_engine=engine)
-        result = await d.run(_make_task())
+        result = await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, method=VerificationMethod.LLM_JUDGE))
         assert result.success is True
-        assert order == ["1", "2", "3", "4"]
+        # Smart route adds original task call; verify subtask ordering
+        subtask_order = [g for g in order if g in ("1", "2", "3", "4")]
+        assert subtask_order == ["1", "2", "3", "4"]
 
 
 # ── TestRetryAndReassignment ────────────────────────────────────────────────
@@ -268,7 +317,8 @@ class TestRetryAndReassignment:
         async def flaky_handler(task):
             nonlocal call_count
             call_count += 1
-            output = "bad" if call_count == 1 else "good"
+            # call 1 = smart route, call 2 = subtask first attempt, call 3 = subtask retry
+            output = "bad" if call_count <= 2 else "good"
             return TaskResult(
                 task_id=task.id, agent_id="a1", output=output, success=True
             )
@@ -283,17 +333,23 @@ class TestRetryAndReassignment:
         subtasks = [
             _sub("Flaky task", method="llm_judge", criteria="Must be good"),
         ]
-        llm = _mock_routing_llm(subtasks, verify_fn=verify_fn)
+        llm = _mock_force_routing_llm(subtasks, verify_fn=verify_fn)
         d = Delegator(agents=[agent], llm_call=llm)
-        result = await d.run(_make_task(max_retries=2))
+        result = await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, max_retries=2, method=VerificationMethod.LLM_JUDGE))
         assert result.success is True
-        assert call_count == 2
+        assert call_count == 3  # 1 smart route + 1 subtask fail + 1 subtask retry
 
     async def test_reassignment_after_retries_exhausted(self):
         """When agent a1 exhausts retries, task is reassigned to a2."""
+        a1_calls = 0
+
         async def bad_handler(task):
+            nonlocal a1_calls
+            a1_calls += 1
+            # First call is smart route — return failure to bypass without trust update
             return TaskResult(
-                task_id=task.id, agent_id="a1", output="always bad", success=True
+                task_id=task.id, agent_id="a1", output="always bad",
+                success=a1_calls > 1,
             )
 
         async def good_handler(task):
@@ -313,8 +369,8 @@ class TestRetryAndReassignment:
             _sub("Needs reassignment", method="llm_judge", criteria="Must be good"),
         ]
         llm = _mock_routing_llm(subtasks, verify_fn=verify_fn)
-        d = Delegator(agents=[a1, a2], llm_call=llm)
-        result = await d.run(_make_task(max_retries=0))
+        d = Delegator(agents=[a1, a2], llm_call=llm, smart_route_max_attempts=1)
+        result = await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, max_retries=0))
         assert result.success is True
         assert result.reassignments >= 1
 
@@ -322,7 +378,7 @@ class TestRetryAndReassignment:
         """When all agents fail, the result is failure."""
         async def bad_handler(task):
             return TaskResult(
-                task_id=task.id, agent_id="a1", output="bad", success=True
+                task_id=task.id, agent_id="a1", output="bad", success=False
             )
 
         async def verify_fn(messages):
@@ -359,9 +415,9 @@ class TestRetryAndReassignment:
             _sub("Good task", method="llm_judge", criteria="ok"),
             _sub("Fail task", method="llm_judge", criteria="ok"),
         ]
-        llm = _mock_routing_llm(subtasks, verify_fn=verify_fn)
+        llm = _mock_force_routing_llm(subtasks, verify_fn=verify_fn)
         d = Delegator(agents=[agent], llm_call=llm, max_reassignments=0)
-        result = await d.run(_make_task(max_retries=0))
+        result = await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, max_retries=0, method=VerificationMethod.LLM_JUDGE))
         assert len(result.subtask_results) == 2
         successes = [r for r in result.subtask_results if r.success]
         failures = [r for r in result.subtask_results if not r.success]
@@ -399,12 +455,12 @@ class TestTrustScoreLifecycle:
         subtasks = [
             _sub("Fail", method="llm_judge", criteria="pass"),
         ]
-        llm = _mock_routing_llm(subtasks, verify_fn=verify_fn)
+        llm = _mock_force_routing_llm(subtasks, verify_fn=verify_fn)
         d = Delegator(agents=[agent], llm_call=llm, max_reassignments=0)
         scores_before = d.get_trust_scores()
         trust_before = scores_before[agent.id]["trust"]["code"]
 
-        await d.run(_make_task(max_retries=0))
+        await d.run(_make_task(max_retries=0, method=VerificationMethod.LLM_JUDGE))
 
         scores_after = d.get_trust_scores()
         trust_after = scores_after[agent.id]["trust"]["code"]
@@ -440,9 +496,9 @@ class TestEventPropagation:
 
         agent = _make_agent()
         subtasks = [_sub("Work")]
-        d = Delegator(agents=[agent], llm_call=_mock_decompose(subtasks))
+        d = Delegator(agents=[agent], llm_call=_mock_force_decompose(subtasks))
         d.on_all(collector)
-        await d.run(_make_task())
+        await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, method=VerificationMethod.LLM_JUDGE))
 
         types = [e.type for e in events]
         assert DelegationEventType.TASK_DECOMPOSED in types
@@ -469,11 +525,11 @@ class TestEventPropagation:
         subtasks = [
             _sub("Fail", method="llm_judge", criteria="pass"),
         ]
-        llm = _mock_routing_llm(subtasks, verify_fn=verify_fn)
+        llm = _mock_force_routing_llm(subtasks, verify_fn=verify_fn)
         # Let Delegator create its own VerificationEngine so it shares the event bus
         d = Delegator(agents=[agent], llm_call=llm, max_reassignments=0)
         d.on_all(collector)
-        await d.run(_make_task(max_retries=0))
+        await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, max_retries=0, method=VerificationMethod.LLM_JUDGE))
 
         types = [e.type for e in events]
         assert DelegationEventType.VERIFICATION_FAILED in types
@@ -488,9 +544,9 @@ class TestEventPropagation:
 
         agent = _make_agent()
         subtasks = [_sub("Work")]
-        d = Delegator(agents=[agent], llm_call=_mock_decompose(subtasks))
+        d = Delegator(agents=[agent], llm_call=_mock_force_decompose(subtasks))
         d.on_all(collector)
-        await d.run(_make_task())
+        await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, method=VerificationMethod.LLM_JUDGE))
 
         decomposed = [e for e in events if e.type == DelegationEventType.TASK_DECOMPOSED]
         assert len(decomposed) == 1
@@ -508,8 +564,8 @@ class TestAuditLog:
     async def test_audit_log_records_all_events(self):
         agent = _make_agent()
         subtasks = [_sub("Work")]
-        d = Delegator(agents=[agent], llm_call=_mock_decompose(subtasks))
-        await d.run(_make_task())
+        d = Delegator(agents=[agent], llm_call=_mock_force_decompose(subtasks))
+        await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, method=VerificationMethod.LLM_JUDGE))
         log = d.get_audit_log()
         assert len(log) > 0
         event_types = {entry.event_type for entry in log}
@@ -562,7 +618,7 @@ class TestComplexityFloorIntegration:
         assert decompose_called is False
 
     async def test_ineligible_uses_full_pipeline(self):
-        """High-complexity task uses decomposition."""
+        """High-complexity task uses decomposition (after smart route fails)."""
         decompose_called = False
 
         async def tracking_llm(messages):
@@ -573,11 +629,16 @@ class TestComplexityFloorIntegration:
                 return {"subtasks": [
                     _sub("Sub"),
                 ]}
-            return {"score": 1.0, "reasoning": "ok"}
+            # Fail smart route verification
+            return {"score": 0.3, "reasoning": "needs decomposition"}
 
         agent = _make_agent()
         d = Delegator(agents=[agent], llm_call=tracking_llm)
-        task = _make_task(complexity=4, reversibility=Reversibility.MEDIUM)
+        task = _make_task(
+            capabilities=_DECOMPOSE_CAPS,
+            complexity=4, reversibility=Reversibility.MEDIUM,
+            method=VerificationMethod.LLM_JUDGE,
+        )
         result = await d.run(task)
         assert decompose_called is True
 
@@ -594,6 +655,6 @@ class TestCostAccumulation:
 
         agent = _make_agent(handler=costed_handler)
         subtasks = [_sub("A"), _sub("B"), _sub("C")]
-        d = Delegator(agents=[agent], llm_call=_mock_decompose(subtasks))
-        result = await d.run(_make_task())
+        d = Delegator(agents=[agent], llm_call=_mock_force_decompose(subtasks))
+        result = await d.run(_make_task(capabilities=_DECOMPOSE_CAPS, method=VerificationMethod.LLM_JUDGE))
         assert result.total_cost >= 0.75  # 3 × 0.25
