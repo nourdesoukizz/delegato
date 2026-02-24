@@ -15,6 +15,7 @@ from delegato.models import (
     Task,
     TaskDAG,
     TaskResult,
+    VerificationMethod,
     VerificationSpec,
 )
 from delegato.assignment import AssignmentScorer
@@ -263,6 +264,17 @@ class CoordinationLoop:
             # Try retrying with the same agent
             if attempt <= task.max_retries:
                 attempt += 1
+                # Append format correction hints for SCHEMA/REGEX failures
+                retry_task = task
+                if vr.method in (VerificationMethod.SCHEMA, VerificationMethod.REGEX):
+                    retry_task = task.model_copy(update={
+                        "goal": (
+                            f"{task.goal}\n\n"
+                            f"IMPORTANT FORMAT CORRECTION: Your previous output failed "
+                            f"format validation. Error: {vr.details}\n"
+                            f"Please ensure your output matches the required format exactly."
+                        )
+                    })
                 contract_retry = Contract(
                     task=task,
                     agent_id=current_agent.id,
@@ -270,7 +282,7 @@ class CoordinationLoop:
                     attempt=attempt,
                 )
                 self._contracts.append(contract_retry)
-                result, vr = await self._run_and_verify(task, current_agent, contract_retry)
+                result, vr = await self._run_and_verify(retry_task, current_agent, contract_retry)
                 if vr.passed:
                     result = TaskResult(
                         task_id=result.task_id,
@@ -328,14 +340,24 @@ class CoordinationLoop:
                 )
             )
 
-            # Execute with new agent
+            # Execute with new agent — include format hints if last failure was format-related
+            retry_task = task
+            if vr.method in (VerificationMethod.SCHEMA, VerificationMethod.REGEX):
+                retry_task = task.model_copy(update={
+                    "goal": (
+                        f"{task.goal}\n\n"
+                        f"IMPORTANT FORMAT CORRECTION: Your previous output failed "
+                        f"format validation. Error: {vr.details}\n"
+                        f"Please ensure your output matches the required format exactly."
+                    )
+                })
             contract_new = Contract(
                 task=task,
                 agent_id=next_agent.id,
                 verification=task.verification,
             )
             self._contracts.append(contract_new)
-            result, vr = await self._run_and_verify(task, next_agent, contract_new)
+            result, vr = await self._run_and_verify(retry_task, next_agent, contract_new)
             if vr.passed:
                 result = TaskResult(
                     task_id=result.task_id,
