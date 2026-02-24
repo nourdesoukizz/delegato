@@ -64,10 +64,12 @@ class Delegator:
         llm_call: Callable[..., Any] | None = None,
         max_parallel: int = 4,
         max_reassignments: int = 3,
+        smart_route_max_attempts: int = 2,
     ) -> None:
         self._model = model
         self._max_parallel = max_parallel
         self._max_reassignments = max_reassignments
+        self._smart_route_max_attempts = smart_route_max_attempts
         self._llm_call = llm_call
 
         # Wire up components — create defaults if not provided
@@ -132,26 +134,40 @@ class Delegator:
         return self._audit_log.get_all()
 
     async def run(self, task: Task) -> DelegationResult:
-        """Full delegation pipeline: complexity floor → decompose → coordinate → assemble."""
+        """Full delegation pipeline: complexity floor → smart route → decompose → coordinate → assemble."""
         start = time.monotonic()
 
-        # ── Complexity floor check ──────────────────────────────────────
+        # ── Tier 0: Complexity floor ────────────────────────────────────
         floor_result = self._permission_manager.check_complexity_floor(
             task, self._agents
         )
         if floor_result.eligible and floor_result.agent_id:
             return await self._fast_path(task, floor_result.agent_id, start)
 
-        # ── Decompose ───────────────────────────────────────────────────
+        # ── Tier 1: Smart route ─────────────────────────────────────────
+        smart_result = await self._smart_route(task, start)
+        if smart_result is not None:
+            return smart_result
+
+        # ── Decomposition gate ──────────────────────────────────────────
+        if not self._should_decompose(task):
+            return await self._fallback_single_agent(
+                task, start, "Single agent has sufficient capability coverage"
+            )
+
+        # ── Tier 2: Decompose ───────────────────────────────────────────
         try:
             dag = await self._decomposition_engine.decompose(task)
         except Exception as exc:
-            elapsed = time.monotonic() - start
-            return DelegationResult(
-                task=task,
-                success=False,
-                output=None,
-                total_duration=elapsed,
+            return await self._fallback_single_agent(
+                task, start, f"Decomposition failed: {exc}"
+            )
+
+        # Check for empty DAG (decomposition returned 0 subtasks)
+        executable_tasks = [tid for tid in dag.tasks if tid != dag.root_task_id]
+        if not executable_tasks:
+            return await self._fallback_single_agent(
+                task, start, "Decomposition produced empty DAG (0 subtasks)"
             )
 
         await self._event_bus.emit(
@@ -175,6 +191,12 @@ class Delegator:
         )
 
         results, reassignments = await loop.execute_dag(dag)
+
+        # If all subtasks failed, fall back to single-agent execution
+        if not any(r.success for r in results):
+            return await self._fallback_single_agent(
+                task, start, "All subtask results failed"
+            )
 
         # ── Assemble ────────────────────────────────────────────────────
         elapsed = time.monotonic() - start
@@ -261,24 +283,156 @@ class Delegator:
                 total_duration=elapsed,
             )
 
-        # Verify even on fast path
-        vr = await self._verification_engine.verify(task, result)
-
-        # Update trust
-        if task.required_capabilities:
-            cap = task.required_capabilities[0]
-            await self._trust_tracker.update_trust(agent.id, cap, verified=vr.passed)
-
+        # Fast path skips verification — trust was already established
+        # by the complexity floor check
         elapsed = time.monotonic() - start
 
         return DelegationResult(
             task=task,
-            success=vr.passed,
+            success=result.success,
             output=result.output,
             subtask_results=[result],
             total_cost=result.cost,
             total_duration=elapsed,
         )
+
+    async def _smart_route(
+        self, task: Task, start: float
+    ) -> DelegationResult | None:
+        """Tier 1: try top-N ranked agents with verification.
+
+        Iterates up to ``smart_route_max_attempts`` agents from ``rank_agents()``.
+        Returns DelegationResult on first verification pass, or None to fall
+        through to decomposition gate / Tier 2.
+        """
+        ranked = self._assignment_scorer.rank_agents(
+            task, self._agents, self._trust_tracker
+        )
+        if not ranked:
+            return None
+
+        max_attempts = min(self._smart_route_max_attempts, len(ranked))
+
+        for i in range(max_attempts):
+            agent, score = ranked[i]
+            if score < self._assignment_scorer.min_threshold:
+                break  # remaining agents are below threshold
+
+            await self._event_bus.emit(
+                DelegationEvent(
+                    type=DelegationEventType.TASK_ASSIGNED,
+                    task_id=task.id,
+                    agent_id=agent.id,
+                )
+            )
+
+            try:
+                result = await agent.handler(task)
+            except Exception:
+                logger.debug("Smart route agent %s raised, trying next", agent.id)
+                continue
+
+            if not result.success:
+                continue
+
+            # Verify output quality
+            task_result = TaskResult(
+                task_id=task.id,
+                agent_id=agent.id,
+                output=result.output,
+                success=result.success,
+                cost=result.cost,
+                duration_seconds=result.duration_seconds,
+            )
+            vr = await self._verification_engine.verify(task, task_result)
+
+            # Update trust based on verification
+            if task.required_capabilities:
+                cap = task.required_capabilities[0]
+                await self._trust_tracker.update_trust(
+                    agent.id, cap, verified=vr.passed
+                )
+
+            if not vr.passed:
+                logger.info(
+                    "Smart route attempt %d/%d failed (agent=%s, score=%.2f) "
+                    "for task %s",
+                    i + 1,
+                    max_attempts,
+                    agent.id,
+                    vr.score,
+                    task.id,
+                )
+                continue
+
+            # Success — return immediately, skip decomposition
+            elapsed = time.monotonic() - start
+            await self._event_bus.emit(
+                DelegationEvent(
+                    type=DelegationEventType.TASK_COMPLETED,
+                    task_id=task.id,
+                    agent_id=agent.id,
+                    data={"tier": "smart_route", "attempt": i + 1},
+                )
+            )
+            return DelegationResult(
+                task=task,
+                success=True,
+                output=result.output,
+                subtask_results=[task_result],
+                total_cost=result.cost,
+                total_duration=elapsed,
+            )
+
+        # All attempts exhausted
+        logger.info(
+            "Smart route exhausted %d attempts for task %s, falling through",
+            max_attempts,
+            task.id,
+        )
+        return None
+
+    async def _fallback_single_agent(
+        self, task: Task, start: float, reason: str
+    ) -> DelegationResult:
+        """Last resort: run original task with single best agent, no decomposition."""
+        logger.warning("Fallback triggered: %s (task=%s)", reason, task.id)
+        agent = self._assignment_scorer.select_best(
+            task, self._agents, self._trust_tracker
+        )
+        if agent is None:
+            elapsed = time.monotonic() - start
+            return DelegationResult(
+                task=task, success=False, output=None, total_duration=elapsed,
+            )
+
+        try:
+            result = await agent.handler(task)
+        except Exception:
+            elapsed = time.monotonic() - start
+            return DelegationResult(
+                task=task, success=False, output=None, total_duration=elapsed,
+            )
+
+        elapsed = time.monotonic() - start
+        return DelegationResult(
+            task=task,
+            success=result.success,
+            output=result.output,
+            subtask_results=[result],
+            total_cost=result.cost,
+            total_duration=elapsed,
+        )
+
+    def _should_decompose(self, task: Task) -> bool:
+        """Only decompose if no single agent covers majority of capabilities."""
+        if not task.required_capabilities:
+            return False
+        for agent in self._agents:
+            matched = len(set(task.required_capabilities) & set(agent.capabilities))
+            if matched >= len(task.required_capabilities) * 0.6:
+                return False  # Single agent covers enough
+        return True
 
     def _find_agent(self, agent_id: str) -> Agent | None:
         """Lookup helper."""
