@@ -241,6 +241,13 @@ pytest
 
 Based on "Intelligent AI Delegation" (Tomasev et al., Google DeepMind, Feb 2026) — [arXiv:2602.11865](https://arxiv.org/abs/2602.11865). A local copy is available in `docs/`.
 
+## Roadmap
+
+- **Framework comparison benchmarks** — evaluate delegato against CrewAI, LangGraph, and AutoGen on the same task set (research, coding, analysis, writing) measuring correctness, latency, and cost
+- **Production hardening** — streaming support, persistent trust state, retry budget configuration
+- **Additional verification methods** — tool-use validation, human-in-the-loop approval
+- **Expanded agent integrations** — first-class adapters for LangGraph, CrewAI, and AutoGen agents
+
 ## License
 
 MIT
