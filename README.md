@@ -3,6 +3,7 @@
 **Intelligent delegation infrastructure for multi-agent AI systems.**
 A protocol layer that sits between goals and agents — providing the organizational intelligence that governs how agents coordinate.
 
+[![PyPI](https://img.shields.io/pypi/v/delegato?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/delegato/)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![License MIT](https://img.shields.io/badge/license-MIT-green)
 ![Tests 306 passed](https://img.shields.io/badge/tests-306%20passed-brightgreen)
