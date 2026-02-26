@@ -243,10 +243,11 @@ Based on "Intelligent AI Delegation" (Tomasev et al., Google DeepMind, Feb 2026)
 
 ## Roadmap
 
-- **Framework comparison benchmarks** — evaluate delegato against CrewAI, LangGraph, and AutoGen on the same task set (research, coding, analysis, writing) measuring correctness, latency, and cost
-- **Production hardening** — streaming support, persistent trust state, retry budget configuration
-- **Additional verification methods** — tool-use validation, human-in-the-loop approval
-- **Expanded agent integrations** — first-class adapters for LangGraph, CrewAI, and AutoGen agents
+- **Framework adapter layer** — first-class adapters for CrewAI, LangGraph, and AutoGen that wrap existing agents into delegato's handler interface with zero boilerplate
+- **Integration benchmarks** — measure delegato + CrewAI vs bare CrewAI (and LangGraph, AutoGen) on the existing 40-task suite, proving the orchestration layer improves outcomes
+- **Ablation studies** — isolate the contribution of each component (trust tracking, multi-judge verification, decomposition, reassignment) by disabling them individually
+- **Production hardening** — persistent trust state, retry budget configuration, streaming support
+- **Additional verification methods** — tool-use validation, human-in-the-loop approval gates
 
 ## License
 
