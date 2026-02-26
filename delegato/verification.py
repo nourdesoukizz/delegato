@@ -36,8 +36,8 @@ class VerificationResult(BaseModel):
 
 # Perspective prompts cycled across multiple judges
 _JUDGE_PERSPECTIVES = [
-    "Evaluate strictly — only pass if the output fully meets every criterion.",
     "Evaluate charitably — pass if the output reasonably addresses the criteria.",
+    "Evaluate strictly — only pass if the output fully meets every criterion.",
     "Evaluate for completeness — does the output cover all aspects of the criteria?",
     "Evaluate for accuracy — is the output factually correct relative to the criteria?",
     "Evaluate for clarity — is the output well-structured and easy to understand?",

@@ -222,6 +222,13 @@ def make_agent_handler(agent_id: str, tracker: CostTracker):
         if task.metadata:
             user_content += f"\n\nAdditional context:\n{json.dumps(task.metadata, indent=2)}"
 
+        # Include acceptance criteria so agent knows the expected format
+        if task.verification and task.verification.criteria:
+            user_content += (
+                f"\n\nIMPORTANT - Your output must satisfy these acceptance criteria:\n"
+                f"{task.verification.criteria}"
+            )
+
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content},
@@ -388,6 +395,7 @@ async def run_delegato(
         trust_tracker=shared_trust,
         permission_manager=pm,
         max_reassignments=2,
+        smart_route_max_attempts=3,
     )
 
     # Track events

@@ -21,6 +21,7 @@ from delegato.models import (
     DelegationResult,
     Task,
     TaskResult,
+    VerificationMethod,
 )
 from delegato.permissions import PermissionManager
 from delegato.trust import TrustTracker
@@ -211,6 +212,25 @@ class Delegator:
             output = successful_outputs[0]
         else:
             output = successful_outputs or None
+
+        # Quality gate: verify assembled output meets original task criteria
+        if (
+            self._llm_call is not None
+            and output is not None
+            and task.verification.method == VerificationMethod.LLM_JUDGE
+            and task.verification.criteria
+        ):
+            assembled_result = TaskResult(
+                task_id=task.id,
+                agent_id="synthesis",
+                output=output,
+                success=True,
+            )
+            vr = await self._verification_engine.verify(task, assembled_result)
+            if not vr.passed:
+                return await self._fallback_single_agent(
+                    task, start, f"Assembled output failed quality gate: {vr.details}"
+                )
 
         return DelegationResult(
             task=task,
@@ -430,7 +450,7 @@ class Delegator:
             return False
         for agent in self._agents:
             matched = len(set(task.required_capabilities) & set(agent.capabilities))
-            if matched >= len(task.required_capabilities) * 0.6:
+            if matched >= len(task.required_capabilities) * 0.5:
                 return False  # Single agent covers enough
         return True
 

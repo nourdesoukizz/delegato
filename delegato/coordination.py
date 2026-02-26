@@ -166,9 +166,17 @@ class CoordinationLoop:
                 await self._handle_failure(task, agent, contract, result, vr)
 
     async def _run_and_verify(
-        self, task: Task, agent: Agent, contract: Contract
+        self, task: Task, agent: Agent, contract: Contract,
+        *, verify_task: Task | None = None,
     ) -> tuple[TaskResult, VerificationResult]:
-        """Execute agent handler with timeout, verify output, update trust, check circuit breaker."""
+        """Execute agent handler with timeout, verify output, update trust, check circuit breaker.
+
+        Args:
+            task: The task to execute (may include retry feedback in goal).
+            verify_task: If provided, use this task for verification instead of ``task``.
+                         This separates agent feedback from verification context.
+        """
+        vtask = verify_task or task
         start = time.monotonic()
         try:
             result = await asyncio.wait_for(
@@ -230,11 +238,11 @@ class CoordinationLoop:
             )
             return result, vr
 
-        # Verify
-        vr = await self._verification_engine.verify(task, result)
+        # Verify against original task (vtask) to avoid feedback text contaminating judgement
+        vr = await self._verification_engine.verify(vtask, result)
 
         # Update trust
-        if task.required_capabilities:
+        if vtask.required_capabilities:
             cap = task.required_capabilities[0]
             old_trust = self._trust_tracker.get_trust(agent.id, cap)
             await self._trust_tracker.update_trust(agent.id, cap, verified=vr.passed)
@@ -275,6 +283,15 @@ class CoordinationLoop:
                             f"Please ensure your output matches the required format exactly."
                         )
                     })
+                elif vr.method == VerificationMethod.LLM_JUDGE and vr.details:
+                    retry_task = task.model_copy(update={
+                        "goal": (
+                            f"{task.goal}\n\n"
+                            f"IMPORTANT: Your previous attempt did not meet quality criteria. "
+                            f"Feedback: {vr.details}\n"
+                            f"Please address this feedback in your response."
+                        )
+                    })
                 contract_retry = Contract(
                     task=task,
                     agent_id=current_agent.id,
@@ -282,7 +299,9 @@ class CoordinationLoop:
                     attempt=attempt,
                 )
                 self._contracts.append(contract_retry)
-                result, vr = await self._run_and_verify(retry_task, current_agent, contract_retry)
+                result, vr = await self._run_and_verify(
+                    retry_task, current_agent, contract_retry, verify_task=task,
+                )
                 if vr.passed:
                     result = TaskResult(
                         task_id=result.task_id,
@@ -340,7 +359,7 @@ class CoordinationLoop:
                 )
             )
 
-            # Execute with new agent — include format hints if last failure was format-related
+            # Execute with new agent — include format/quality hints if last failure was related
             retry_task = task
             if vr.method in (VerificationMethod.SCHEMA, VerificationMethod.REGEX):
                 retry_task = task.model_copy(update={
@@ -351,13 +370,24 @@ class CoordinationLoop:
                         f"Please ensure your output matches the required format exactly."
                     )
                 })
+            elif vr.method == VerificationMethod.LLM_JUDGE and vr.details:
+                retry_task = task.model_copy(update={
+                    "goal": (
+                        f"{task.goal}\n\n"
+                        f"IMPORTANT: Your previous attempt did not meet quality criteria. "
+                        f"Feedback: {vr.details}\n"
+                        f"Please address this feedback in your response."
+                    )
+                })
             contract_new = Contract(
                 task=task,
                 agent_id=next_agent.id,
                 verification=task.verification,
             )
             self._contracts.append(contract_new)
-            result, vr = await self._run_and_verify(retry_task, next_agent, contract_new)
+            result, vr = await self._run_and_verify(
+                retry_task, next_agent, contract_new, verify_task=task,
+            )
             if vr.passed:
                 result = TaskResult(
                     task_id=result.task_id,
