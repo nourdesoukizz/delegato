@@ -53,7 +53,7 @@
 
 ### Immediate Blocker
 
-**Anthropic API credits: balance is $0.** No further experiments can run until credits are loaded. Estimated need: $250-350 total (see Section 7).
+**Anthropic API credits: balance Estimated need: $250-350 total (see Section 7).
 
 ### P0: Must-Have Experiments
 
