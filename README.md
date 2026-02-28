@@ -10,6 +10,10 @@ A protocol layer that sits between goals and agents — providing the organizati
 ![Coverage 94%](https://img.shields.io/badge/coverage-94%25-brightgreen)
 [![arXiv](https://img.shields.io/badge/arXiv-2602.11865-b31b1b?logo=arxiv)](https://arxiv.org/abs/2602.11865)
 
+## Demo
+
+<video src="docs/delegato-demo.mp4" autoplay loop muted playsinline width="100%"></video>
+
 ## Highlights
 
 **Core pipeline**
