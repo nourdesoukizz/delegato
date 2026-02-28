@@ -12,7 +12,7 @@ A protocol layer that sits between goals and agents — providing the organizati
 
 ## Demo
 
-<video src="docs/delegato-demo.mp4" autoplay loop muted playsinline width="100%"></video>
+<video src="https://github.com/user-attachments/assets/0cb557db-8ccb-4cdd-bbb7-026811e3ceb2" autoplay loop muted playsinline width="100%"></video>
 
 ## Highlights
 
