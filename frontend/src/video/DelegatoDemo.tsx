@@ -36,40 +36,40 @@ export const DelegatoDemo: React.FC = () => {
       />
 
       {/* Narration audio — one clip per scene */}
-      <Sequence from={30} durationInFrames={120}>
+      <Sequence from={15} durationInFrames={135}>
         <Audio src={staticFile("audio/narration/scene1.mp3")} volume={1} />
       </Sequence>
-      <Sequence from={155} durationInFrames={145}>
+      <Sequence from={150} durationInFrames={140}>
         <Audio src={staticFile("audio/narration/scene2.mp3")} volume={1} />
       </Sequence>
-      <Sequence from={310} durationInFrames={80}>
+      <Sequence from={305} durationInFrames={77}>
         <Audio src={staticFile("audio/narration/scene3a.mp3")} volume={1} />
       </Sequence>
-      <Sequence from={395} durationInFrames={100}>
+      <Sequence from={382} durationInFrames={93}>
         <Audio src={staticFile("audio/narration/scene3b.mp3")} volume={1} />
       </Sequence>
-      <Sequence from={490} durationInFrames={90}>
+      <Sequence from={475} durationInFrames={75}>
         <Audio src={staticFile("audio/narration/scene3c.mp3")} volume={1} />
       </Sequence>
-      <Sequence from={580} durationInFrames={90}>
+      <Sequence from={550} durationInFrames={109}>
         <Audio src={staticFile("audio/narration/scene3d.mp3")} volume={1} />
       </Sequence>
-      <Sequence from={670} durationInFrames={80}>
+      <Sequence from={659} durationInFrames={100}>
         <Audio src={staticFile("audio/narration/scene3e.mp3")} volume={1} />
       </Sequence>
-      <Sequence from={760} durationInFrames={295}>
+      <Sequence from={762} durationInFrames={285}>
         <Audio src={staticFile("audio/narration/scene4.mp3")} volume={1} />
       </Sequence>
-      <Sequence from={1060} durationInFrames={200}>
+      <Sequence from={1055} durationInFrames={206}>
         <Audio src={staticFile("audio/narration/scene5.mp3")} volume={1} />
       </Sequence>
-      <Sequence from={1270} durationInFrames={220}>
+      <Sequence from={1265} durationInFrames={221}>
         <Audio src={staticFile("audio/narration/scene6.mp3")} volume={1} />
       </Sequence>
-      <Sequence from={1510} durationInFrames={130}>
+      <Sequence from={1500} durationInFrames={160}>
         <Audio src={staticFile("audio/narration/scene7.mp3")} volume={1} />
       </Sequence>
-      <Sequence from={1670} durationInFrames={80}>
+      <Sequence from={1665} durationInFrames={100}>
         <Audio src={staticFile("audio/narration/scene8.mp3")} volume={1} />
       </Sequence>
 
